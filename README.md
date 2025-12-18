@@ -151,15 +151,15 @@ python train.py \
     --batch_size 32 \
     --epoch 10 \
     --gpus 0 \
-    --num_workers 8 \
+    --num_workers -1 \
     --logdir ./logs \
     --lr 0.001
 ```
 
 **Key parameters:**
 - `--gpus 0`: CPU only
-- `--num_workers 8`: Use more CPU cores for data loading (adjust to your CPU core count)
-- Set `--num_workers` to match your CPU core count for maximum utilization
+- `--num_workers -1`: Automatically use all available CPU cores for data loading
+- Alternative: Set `--num_workers` to a specific number (e.g., `8`) to match your CPU core count
 
 #### 5. Quick Test Run (Minimal Resources)
 Best for: Quick testing, debugging, or systems with limited resources
@@ -193,7 +193,7 @@ python train.py \
 | `--batch_size` | Samples per batch | 1 | `32`, `64`, `128` |
 | `--epoch` | Number of epochs | 20 | `10`, `20`, `50` |
 | `--gpus` | Number of GPUs (0=CPU) | 1 | `0`, `1`, `-1` (all) |
-| `--num_workers` | Data loading workers | 0 | `0`, `4`, `8` |
+| `--num_workers` | Data loading workers | 0 | `0`, `4`, `8`, `-1` (all CPU cores) |
 | `--lr` | Learning rate | 0.001 | `0.0001`, `0.001`, `0.01` |
 | `--val_ratio` | Validation split ratio | 0.2 | `0.1`, `0.2`, `0.3` |
 | `--logdir` | Log directory | `./` | `./logs` |
@@ -395,7 +395,7 @@ tensorboard --logdir ./logs/lightning_logs
 - Use `--model Linear` instead of `Conv` (smaller model)
 
 ### Slow Training
-- Increase `--num_workers` for faster data loading
+- Increase `--num_workers` for faster data loading (use `-1` to use all CPU cores)
 - Use GPU if available (`--gpus 1`)
 - Increase `--batch_size` if memory allows
 - Reduce `--val_freq` to validate less frequently

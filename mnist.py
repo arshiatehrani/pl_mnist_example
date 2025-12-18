@@ -22,6 +22,9 @@ from torch.utils.data.sampler import SubsetRandomSampler
 #        Used here for shuffling indices and calculating split points
 import numpy as np
 
+# os: Used for accessing system information (CPU count for num_workers=-1)
+import os
+
 
 class MNISTDataModule(pl.LightningDataModule):
     """
@@ -37,7 +40,7 @@ class MNISTDataModule(pl.LightningDataModule):
             **kwargs: Dictionary containing configuration parameters:
                 - data_dir: Directory where MNIST dataset will be stored/downloaded
                 - batch_size: Number of samples per batch
-                - num_workers: Number of subprocesses for data loading (0 = main process only)
+                - num_workers: Number of subprocesses for data loading (0 = main process only, -1 = all available CPU cores)
                 - pin_memory: Whether to pin memory in DataLoader (faster GPU transfer)
                 - val_ratio: Fraction of training data to use for validation (0.0 to 1.0)
         """
@@ -53,7 +56,13 @@ class MNISTDataModule(pl.LightningDataModule):
         
         # self.num_workers: Integer, number of parallel worker processes for loading data
         #                  Default is 0 (single-threaded). Higher values speed up data loading but use more CPU
-        self.num_workers = kwargs.get('num_workers', 0)
+        #                  If -1, automatically uses all available CPU cores
+        num_workers = kwargs.get('num_workers', 0)
+        if num_workers == -1:
+            # Use all available CPU cores for data loading
+            self.num_workers = os.cpu_count() or 1
+        else:
+            self.num_workers = num_workers
         
         # self.pin_memory: Boolean, if True, data is pinned to GPU memory for faster transfer
         #                 Only effective when using GPU. Requires more RAM but speeds up training

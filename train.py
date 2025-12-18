@@ -116,7 +116,8 @@ if __name__ == "__main__":
     
     # --num_workers: Integer, number of parallel worker processes for data loading
     #                Default is 0 (single-threaded), higher values speed up data loading
-    parser.add_argument('--num_workers', help="# of dataloader cpu process", default=0, type=int)
+    #                Use -1 to automatically use all available CPU cores
+    parser.add_argument('--num_workers', help="# of dataloader cpu process (use -1 for all available CPU cores)", default=0, type=int)
     
     # --val_freq: Float, how often to run validation within a training epoch
     #            0.1 = validate 10% through each epoch (10 times per epoch)
