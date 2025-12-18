@@ -161,7 +161,34 @@ python train.py \
 - `--num_workers -1`: Automatically use all available CPU cores for data loading
 - Alternative: Set `--num_workers` to a specific number (e.g., `8`) to match your CPU core count
 
-#### 5. Quick Test Run (Minimal Resources)
+#### 5. Maximum CPU and GPU Utilization
+Best for: High-performance systems with multiple GPUs, maximum resource utilization
+
+```bash
+python train.py \
+    --model Conv \
+    --dataloader MNIST \
+    --data_dir ./data \
+    --batch_size 256 \
+    --epoch 20 \
+    --gpus -1 \
+    --num_workers -1 \
+    --logdir ./logs \
+    --lr 0.001
+```
+
+**Key parameters:**
+- `--gpus -1`: Use all available GPUs (PyTorch Lightning will auto-detect)
+- `--num_workers -1`: Automatically use all available CPU cores for data loading
+- `--batch_size 256`: Large batch size (distributed across all GPUs)
+- This configuration maximizes both GPU compute and CPU data loading parallelism
+
+**Performance tips:**
+- With multiple GPUs, batch size is effectively multiplied (256 batch size across 4 GPUs = 64 per GPU)
+- All CPU cores handle data loading in parallel, keeping GPUs fed with data
+- Ideal for workstations or servers with multiple GPUs and many CPU cores
+
+#### 6. Quick Test Run (Minimal Resources)
 Best for: Quick testing, debugging, or systems with limited resources
 
 ```bash
@@ -240,6 +267,21 @@ python train.py \
     --num_workers 8 \
     --logdir ./logs
 ```
+
+#### High-Performance Workstation/Server (Maximum Utilization)
+```bash
+python train.py \
+    --model Conv \
+    --dataloader MNIST \
+    --data_dir ./data \
+    --batch_size 256 \
+    --epoch 20 \
+    --gpus -1 \
+    --num_workers -1 \
+    --logdir ./logs
+```
+
+**Note:** This configuration uses all available GPUs and all available CPU cores for maximum performance.
 
 ### Data Download
 
