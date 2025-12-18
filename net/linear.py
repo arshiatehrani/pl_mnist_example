@@ -68,6 +68,10 @@ class Linear(pl.LightningModule):
         # save_hyperparameters: PyTorch Lightning method that saves all __init__ arguments
         #                      Allows checkpoint to restore model with same hyperparameters
         self.save_hyperparameters()
+        
+        # example_input_array: Sample input for TensorBoard graph visualization
+        #                      Shape: (batch_size, channels, height, width) = (1, 1, 28, 28)
+        self.example_input_array = torch.zeros(1, 1, 28, 28)
 
     def forward(self, x):
         """
@@ -185,13 +189,12 @@ class Linear(pl.LightningModule):
         
         return loss
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
         """
         Called at the end of each validation epoch.
         Computes and logs average metrics across all validation batches.
-        
-        Args:
-            outputs: List of return values from validation_step (losses in this case)
+        Note: In PyTorch Lightning 2.0+, outputs parameter is removed.
+        Access outputs via instance attributes (self.losses, self.accuracies).
         """
         # overall_acc: Float, mean accuracy across all validation batches
         #             Computes average of all individual accuracies collected
@@ -247,13 +250,12 @@ class Linear(pl.LightningModule):
         
         return acc
 
-    def test_epoch_end(self, outputs):
+    def on_test_epoch_end(self):
         """
         Called at the end of test evaluation.
         Computes and logs average test accuracy.
-        
-        Args:
-            outputs: List of return values from test_step (accuracies in this case)
+        Note: In PyTorch Lightning 2.0+, outputs parameter is removed.
+        Access outputs via instance attributes (self.accuracies).
         """
         # overall_acc: Float, mean accuracy across all test batches
         #             Final performance metric on held-out test set

@@ -25,6 +25,9 @@ import numpy as np
 # os: Used for accessing system information (CPU count for num_workers=-1)
 import os
 
+# torch: Used to check GPU availability for pin_memory setting
+import torch
+
 
 class MNISTDataModule(pl.LightningDataModule):
     """
@@ -66,7 +69,10 @@ class MNISTDataModule(pl.LightningDataModule):
         
         # self.pin_memory: Boolean, if True, data is pinned to GPU memory for faster transfer
         #                 Only effective when using GPU. Requires more RAM but speeds up training
-        self.pin_memory = kwargs.get('pin_memory')
+        #                 Automatically set to False if no GPU is available to avoid warnings
+        pin_memory_setting = kwargs.get('pin_memory', True)
+        # Only use pin_memory if GPU is available, otherwise it causes warnings
+        self.pin_memory = pin_memory_setting and torch.cuda.is_available()
         
         # self.val_ratio: Float between 0.0 and 1.0, fraction of training data to use for validation
         #                 Example: 0.2 means 20% of training data becomes validation set
@@ -150,8 +156,16 @@ class MNISTDataModule(pl.LightningDataModule):
         # - batch_size: Number of samples per batch
         # - sampler: Only samples indices from training subset (excludes validation indices)
         # - num_workers: Number of parallel data loading processes
-        # - pin_memory: Pins data to GPU memory for faster transfer (if using GPU)
-        return DataLoader(self.dataset_train, batch_size=self.batch_size, sampler=self.dataset_tr_indices, num_workers=self.num_workers, pin_memory=True)
+        # - pin_memory: Pins data to GPU memory for faster transfer (only if GPU available)
+        # - persistent_workers: Keeps workers alive between epochs (speeds up initialization when num_workers > 0)
+        return DataLoader(
+            self.dataset_train, 
+            batch_size=self.batch_size, 
+            sampler=self.dataset_tr_indices, 
+            num_workers=self.num_workers, 
+            pin_memory=self.pin_memory,
+            persistent_workers=self.num_workers > 0  # Only use persistent workers if we have workers
+        )
 
     def val_dataloader(self):
         """
@@ -166,8 +180,16 @@ class MNISTDataModule(pl.LightningDataModule):
         # - batch_size: Number of samples per batch
         # - sampler: Only samples indices from validation subset (excludes training indices)
         # - num_workers: Number of parallel data loading processes
-        # - pin_memory: Pins data to GPU memory for faster transfer (if using GPU)
-        return DataLoader(self.dataset_val, batch_size=self.batch_size, sampler=self.dataset_val_indices, num_workers=self.num_workers, pin_memory=True)
+        # - pin_memory: Pins data to GPU memory for faster transfer (only if GPU available)
+        # - persistent_workers: Keeps workers alive between epochs (speeds up initialization when num_workers > 0)
+        return DataLoader(
+            self.dataset_val, 
+            batch_size=self.batch_size, 
+            sampler=self.dataset_val_indices, 
+            num_workers=self.num_workers, 
+            pin_memory=self.pin_memory,
+            persistent_workers=self.num_workers > 0  # Only use persistent workers if we have workers
+        )
 
     def test_dataloader(self):
         """
@@ -182,5 +204,13 @@ class MNISTDataModule(pl.LightningDataModule):
         # - batch_size: Number of samples per batch
         # - num_workers: Number of parallel data loading processes
         # - shuffle=False: Don't shuffle test data (deterministic order for reproducibility)
-        # - pin_memory: Pins data to GPU memory for faster transfer (if using GPU)
-        return DataLoader(self.dataset_test, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, pin_memory=True)
+        # - pin_memory: Pins data to GPU memory for faster transfer (only if GPU available)
+        # - persistent_workers: Keeps workers alive between epochs (speeds up initialization when num_workers > 0)
+        return DataLoader(
+            self.dataset_test, 
+            batch_size=self.batch_size, 
+            num_workers=self.num_workers, 
+            shuffle=False, 
+            pin_memory=self.pin_memory,
+            persistent_workers=self.num_workers > 0  # Only use persistent workers if we have workers
+        )

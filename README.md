@@ -1,6 +1,20 @@
 # PyTorch Lightning MNIST example
 MNIST example with PyTorch Lightning
 
+## Features
+
+- **PyTorch Lightning 2.0+ Compatible**: Updated to use the latest PyTorch Lightning API
+- **Automatic GPU/CPU Detection**: Automatically falls back to CPU if GPU is not available
+- **Flexible Resource Usage**: 
+  - `--gpus -1`: Automatically use all available GPUs (or CPU if no GPU)
+  - `--num_workers -1`: Automatically use all available CPU cores
+- **TensorBoard Integration**: Real-time training metrics visualization with comprehensive logging
+- **Multiple Model Architectures**: Support for both Linear and Convolutional models
+- **Comprehensive Logging**: Automatic checkpointing, loss tracking, and accuracy metrics
+- **Warning-Free Training**: Optimized to eliminate common warnings (pin_memory, persistent_workers)
+- **Easy Data Management**: Automatic MNIST download with verification options
+- **Production Ready**: Includes proper error handling, GPU fallback, and performance optimizations
+
 ## Virtual Environment Setup
 
 ### Initial Setup
@@ -36,6 +50,15 @@ and then refer to https://pytorch.org/ to get the required CUDA version suitable
 - Python 3.7+
 - PyTorch and PyTorch Lightning installed
 - (Optional) CUDA-enabled GPU for GPU training
+
+### PyTorch Lightning 2.0+ Compatibility
+
+This project is fully compatible with PyTorch Lightning 2.0+ and includes:
+- **Updated API usage**: Uses `accelerator` and `devices` instead of deprecated `gpus` parameter
+- **Modern hook names**: Uses `on_validation_epoch_end` and `on_test_epoch_end` instead of deprecated methods
+- **Automatic GPU/CPU fallback**: When GPU is requested but not available, automatically falls back to CPU
+- **Optimized DataLoader settings**: Automatic `pin_memory` and `persistent_workers` configuration based on device availability
+- **TensorBoard graph logging**: Model architecture visualization with `example_input_array`
 
 ### Basic Command Structure
 ```bash
@@ -136,7 +159,7 @@ python train.py \
 ```
 
 **Key parameters:**
-- `--gpus -1`: Use all available GPUs (PyTorch Lightning will auto-detect)
+- `--gpus -1`: Use all available GPUs (PyTorch Lightning will auto-detect, or fall back to CPU if no GPU)
 - `--batch_size 128`: Larger batch size (distributed across GPUs)
 - `--num_workers 8`: More workers for parallel data loading
 
@@ -178,10 +201,15 @@ python train.py \
 ```
 
 **Key parameters:**
-- `--gpus -1`: Use all available GPUs (PyTorch Lightning will auto-detect)
+- `--gpus -1`: Use all available GPUs (PyTorch Lightning will auto-detect, or automatically fall back to CPU if no GPU is available)
 - `--num_workers -1`: Automatically use all available CPU cores for data loading
 - `--batch_size 256`: Large batch size (distributed across all GPUs)
 - This configuration maximizes both GPU compute and CPU data loading parallelism
+
+**Note on Automatic Fallback:**
+- If you specify `--gpus -1` but no GPU is available, the system will automatically detect this and use CPU instead
+- You'll see a message: `[info] No GPU available, falling back to CPU`
+- This makes the same command work on both GPU and CPU systems
 
 **Performance tips:**
 - With multiple GPUs, batch size is effectively multiplied (256 batch size across 4 GPUs = 64 per GPU)
@@ -219,7 +247,7 @@ python train.py \
 | `--data_dir` | Dataset directory | Required | `./data` |
 | `--batch_size` | Samples per batch | 1 | `32`, `64`, `128` |
 | `--epoch` | Number of epochs | 20 | `10`, `20`, `50` |
-| `--gpus` | Number of GPUs (0=CPU) | 1 | `0`, `1`, `-1` (all) |
+| `--gpus` | Number of GPUs (0=CPU, -1=all) | 1 | `0` (CPU), `1` (1 GPU), `-1` (all GPUs, auto-fallback to CPU) |
 | `--num_workers` | Data loading workers | 0 | `0`, `4`, `8`, `-1` (all CPU cores) |
 | `--lr` | Learning rate | 0.001 | `0.0001`, `0.001`, `0.01` |
 | `--val_ratio` | Validation split ratio | 0.2 | `0.1`, `0.2`, `0.3` |
@@ -378,16 +406,155 @@ python verify_mnist.py
 
 If you skip the pre-download step, the dataset will automatically download on the first training run. The download happens in `mnist.py` when the `MNISTDataModule` is initialized with `download=True`.
 
-### Viewing Training Metrics
+### Viewing Training Metrics with TensorBoard
 
-After starting training, view metrics in TensorBoard:
+TensorBoard provides real-time visualization of your training metrics, model architecture, and performance graphs.
+
+#### Starting TensorBoard
+
+**Option 1: View All Training Runs (Recommended)**
+
+Open a **new terminal/PowerShell window** (keep training running in the original window) and run:
+
+```powershell
+# 1. Navigate to your project directory (IMPORTANT: Must be in project root, not logs folder)
+# Replace <your-project-path> with your actual project directory path
+cd <your-project-path>/pl_mnist_example
+# Example on Windows: cd C:\Users\YourName\projects\pl_mnist_example
+# Example on Linux/Mac: cd ~/projects/pl_mnist_example
+
+# 2. Activate your virtual environment (REQUIRED)
+.\venv\Scripts\Activate.ps1  # Windows PowerShell
+# or
+source venv/bin/activate     # Linux/Mac
+# or if using conda environment:
+conda activate <your-env-name>
+
+# 3. Start TensorBoard pointing to the lightning_logs directory
+tensorboard --logdir ./logs/lightning_logs
+```
+
+**Important Notes:**
+- You must be in the **project root directory** (where `train.py` is located), NOT inside the `logs` folder
+- You must **activate your virtual environment** first (TensorBoard needs to be installed in the active environment)
+- If you see "tensorboard: The term 'tensorboard' is not recognized", it means the virtual environment is not activated
+
+**Option 2: View Specific Training Run**
+
+If you want to view a specific run by timestamp:
 
 ```bash
-# In a separate terminal, run:
+tensorboard --logdir ./logs/lightning_logs/version_1218173008
+```
+
+(Replace `1218173008` with your actual timestamp from the training output)
+
+#### Accessing TensorBoard
+
+After starting TensorBoard, you should see output like:
+
+```
+TensorBoard 2.x.x at http://localhost:6006/ (Press CTRL+C to quit)
+```
+
+Then:
+
+1. **Open your web browser**
+2. **Navigate to**: `http://localhost:6006`
+3. You should see the TensorBoard interface with your training metrics
+
+#### What You'll See in TensorBoard
+
+**Scalars Tab** (Main Metrics):
+- **Training loss** - Training loss over time (logged every step)
+- **Validation loss** - Validation loss (used for checkpointing, logged at validation intervals)
+- **Validation Accuracy** - Model accuracy on validation set
+- **Learning rate** - Current learning rate (if logged)
+- **Epoch duration** - Time per epoch
+
+**Graphs Tab**:
+- **Model architecture** - Visual representation of your model (Conv or Linear)
+- **Data flow** - How data moves through the network layers
+- **Computation graph** - Full forward pass visualization
+
+**Images Tab** (if you add image logging):
+- Sample predictions and visualizations (if implemented)
+
+#### TensorBoard Tips
+
+**Real-Time Updates:**
+- TensorBoard auto-refreshes every 30 seconds
+- You can keep it open while training runs
+- Metrics update automatically as training progresses
+
+**Comparing Multiple Runs:**
+- If you run training multiple times, TensorBoard shows all runs
+- You can toggle runs on/off in the left sidebar to compare
+- Useful for hyperparameter tuning and comparing different configurations
+
+**Stopping TensorBoard:**
+- Press `CTRL+C` in the terminal where TensorBoard is running
+
+#### TensorBoard Command Options
+
+```bash
+# Basic usage (view all runs)
 tensorboard --logdir ./logs/lightning_logs
 
-# Then open browser to:
-# http://localhost:6006
+# With custom port (if 6006 is busy)
+tensorboard --logdir ./logs/lightning_logs --port 6007
+# Then access: http://localhost:6007
+
+# View specific run
+tensorboard --logdir ./logs/lightning_logs/version_1218173008
+
+# Load faster (disable fast loading for better compatibility)
+tensorboard --logdir ./logs/lightning_logs --load_fast false
+
+# Host on all interfaces (for remote access)
+tensorboard --logdir ./logs/lightning_logs --host 0.0.0.0
+```
+
+#### Troubleshooting TensorBoard
+
+**"tensorboard: The term 'tensorboard' is not recognized":**
+- **Activate your virtual environment first**: `.\venv\Scripts\Activate.ps1` (Windows PowerShell) or `conda activate p` (if using conda)
+- **Make sure you're in the project root directory**, not inside the logs folder
+- **Verify TensorBoard is installed**: `pip install tensorboard` (run this in your activated virtual environment)
+- **Check your current directory**: Run `pwd` (Linux/Mac) or `cd` (Windows) to see where you are. You should be in the project root where `train.py` is located
+
+**"No dashboards are active":**
+- Make sure training has run for at least one epoch
+- Check that the log directory path is correct: `./logs/lightning_logs` (relative to project root)
+- Verify logs are being written: `dir ./logs/lightning_logs` (Windows) or `ls ./logs/lightning_logs` (Linux/Mac)
+- Make sure you're running TensorBoard from the project root directory
+
+**Port 6006 already in use:**
+- Use a different port: `tensorboard --logdir ./logs/lightning_logs --port 6007`
+- Then access: `http://localhost:6007`
+
+**"No scalar data":**
+- Wait for the first validation step to complete
+- Training needs to log at least one metric before TensorBoard can display it
+- Check that training is actually running and logging metrics
+
+**Quick Fix for "tensorboard not recognized":**
+```powershell
+# Step 1: Navigate to project root (replace with your actual project path)
+cd <your-project-path>/pl_mnist_example
+# Example: cd ~/projects/pl_mnist_example  (Linux/Mac)
+# Example: cd C:\Users\YourName\projects\pl_mnist_example  (Windows)
+
+# Step 2: Activate virtual environment
+.\venv\Scripts\Activate.ps1  # Windows PowerShell
+# or
+source venv/bin/activate     # Linux/Mac
+
+# Step 3: Verify TensorBoard is installed (if not, install it)
+pip install tensorboard
+
+# Step 4: Run TensorBoard
+tensorboard --logdir ./logs/lightning_logs
 ```
 
 ### Example: Complete Training Workflow
@@ -430,17 +597,35 @@ tensorboard --logdir ./logs/lightning_logs
 - Check CUDA installation: `nvidia-smi`
 - Verify PyTorch CUDA support: `python -c "import torch; print(torch.cuda.is_available())"`
 - Reinstall PyTorch with correct CUDA version from https://pytorch.org/
+- **Note**: If you use `--gpus -1` and no GPU is available, the system will automatically fall back to CPU
+
+### PyTorch Lightning API Errors
+- **"got an unexpected keyword argument 'gpus'"**: This project uses PyTorch Lightning 2.0+ API. Update your PyTorch Lightning: `pip install --upgrade pytorch-lightning`
+- **"Support for validation_epoch_end has been removed"**: The code has been updated to use `on_validation_epoch_end`. Make sure you're using the latest version of the code.
+- **"No supported gpu backend found!"**: The system will automatically fall back to CPU. This is expected behavior when no GPU is available.
 
 ### Out of Memory Errors
 - Reduce `--batch_size` (try 16, 32, or 64)
 - Reduce `--num_workers` (try 0, 2, or 4)
 - Use `--model Linear` instead of `Conv` (smaller model)
+- If using GPU, reduce batch size per GPU
 
 ### Slow Training
 - Increase `--num_workers` for faster data loading (use `-1` to use all CPU cores)
-- Use GPU if available (`--gpus 1`)
+- Use GPU if available (`--gpus 1` or `--gpus -1`)
 - Increase `--batch_size` if memory allows
 - Reduce `--val_freq` to validate less frequently
+- Enable `persistent_workers` (automatically enabled when `num_workers > 0`)
+
+### Warnings During Training
+- **pin_memory warnings**: These are automatically handled - `pin_memory` is only used when GPU is available
+- **persistent_workers warnings**: These are automatically enabled when `num_workers > 0` for better performance
+- **TensorBoard graph warnings**: Model includes `example_input_array` for graph visualization
+
+### TensorBoard Issues
+- **TensorBoard not showing data**: Wait for at least one validation step to complete. Check that `./logs/lightning_logs` directory exists and contains event files.
+- **Port already in use**: Use a different port with `--port 6007` flag.
+- **"No dashboards are active"**: Ensure training has completed at least one epoch and validation step.
 
 ### Data Download Issues
 - Check internet connection

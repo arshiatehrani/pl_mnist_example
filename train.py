@@ -23,6 +23,9 @@ import time
 #                   Provides Trainer class that handles training loop, validation, logging, etc.
 import pytorch_lightning as pl
 
+# torch: PyTorch library for checking GPU availability
+import torch
+
 # ModelCheckpoint: Callback that automatically saves model checkpoints during training
 #                  Can save best models based on validation metrics
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -235,28 +238,67 @@ if __name__ == "__main__":
     #         log_graph: Whether to log model computation graph
     logger = TensorBoardLogger(save_dir=dict_args['logdir'], version=now, name='lightning_logs', log_graph=True)
     
+    # Convert gpus argument to new PyTorch Lightning 2.0+ API (accelerator and devices)
+    # gpus=0 -> accelerator="cpu", devices=1
+    # gpus=1 -> accelerator="gpu", devices=1
+    # gpus=-1 -> accelerator="gpu", devices="auto" (all available GPUs)
+    # gpus>1 -> accelerator="gpu", devices=gpus (specific number of GPUs)
+    # Check GPU availability first
+    gpu_available = torch.cuda.is_available()
+    gpus_arg = dict_args['gpus']
+    
+    if gpus_arg == 0:
+        # Explicitly use CPU
+        accelerator = "cpu"
+        devices = 1
+    elif gpus_arg == -1:
+        # Use all available GPUs, or fall back to CPU if none available
+        if gpu_available:
+            accelerator = "gpu"
+            devices = "auto"  # Use all available GPUs
+            print(f"[info] Using all available GPUs ({torch.cuda.device_count()} GPU(s))")
+        else:
+            accelerator = "cpu"
+            devices = 1
+            print("[info] No GPU available, falling back to CPU")
+    else:
+        # Use specific number of GPUs
+        if gpu_available:
+            num_gpus = torch.cuda.device_count()
+            if gpus_arg > num_gpus:
+                print(f"[warning] Requested {gpus_arg} GPUs but only {num_gpus} available. Using {num_gpus} GPU(s).")
+                devices = num_gpus
+            else:
+                devices = gpus_arg
+            accelerator = "gpu"
+            print(f"[info] Using {devices} GPU(s)")
+        else:
+            accelerator = "cpu"
+            devices = 1
+            print(f"[warning] Requested {gpus_arg} GPU(s) but no GPU available. Falling back to CPU.")
+    
     # trainer: PyTorch Lightning Trainer that orchestrates the entire training process
     #          callbacks: List of callbacks (checkpoint saving, etc.)
     #          val_check_interval: How often to validate (0.1 = 10% through each epoch)
     #          deterministic: Ensures reproducible results (slower but consistent)
-    #          gpus: Number of GPUs to use
+    #          accelerator: Device type ("cpu" or "gpu")
+    #          devices: Number of devices or "auto" for all available
     #          profiler: Performance profiler for timing analysis
     #          logger: TensorBoard logger for metrics visualization
     #          max_epochs: Maximum number of training epochs
     #          log_every_n_steps: Log metrics every N training steps
     #          gradient_clip_val: Maximum gradient norm (0 = no clipping)
-    #          resume_from_checkpoint: Path to checkpoint to resume from (None = start fresh)
     trainer = pl.Trainer(
         callbacks=[checkpoint_callback],
         val_check_interval=dict_args['val_freq'],
         deterministic=True,
-        gpus=dict_args['gpus'],
+        accelerator=accelerator,
+        devices=devices,
         profiler=profiler,
         logger=logger,
         max_epochs=dict_args["epoch"],
         log_every_n_steps=10,
-        gradient_clip_val=dict_args['clip_grad_norm'],
-        resume_from_checkpoint=dict_args['resume_from_checkpoint']
+        gradient_clip_val=dict_args['clip_grad_norm']
     )
 
     # Print training start message
@@ -265,7 +307,10 @@ if __name__ == "__main__":
     # trainer.fit: Main training function that runs the training loop
     #              Trains model on training data, validates on validation data
     #              Automatically handles epochs, batching, optimization, logging, checkpointing
-    trainer.fit(model, data_module)
+    #              ckpt_path: Path to checkpoint to resume from (None = start fresh)
+    #                        In newer PyTorch Lightning, resume_from_checkpoint moved to fit() method
+    ckpt_path = dict_args['resume_from_checkpoint'] if dict_args['resume_from_checkpoint'] else None
+    trainer.fit(model, data_module, ckpt_path=ckpt_path)
 
     # Optionally evaluate model on test set after training completes
     if dict_args['eval']:
