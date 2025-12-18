@@ -2,8 +2,9 @@
 #SBATCH --time=0-00:30:00
 #SBATCH --account=def-bakhshai
 #SBATCH --mem=32000M            # memory per node
-#SBATCH --gpus-per-node=1
-#SBATCH --cpus-per-task=10      # CPU cores/threads
+#SBATCH --gpus-per-node=h100:1
+#SBATCH --cpus-per-task=6      # CPU cores/threads
+#SBATCH --ntasks-per-node=12
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 echo "Hello World"
