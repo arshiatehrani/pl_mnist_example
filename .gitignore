@@ -128,6 +128,11 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Project-specific: Training logs and data directories
+logs/
+data/
+
+# Legacy entries (kept for backward compatibility)
 /MNIST
 /lightning_logs
 /models
