@@ -6,6 +6,9 @@
 # Step 1: Install PyTorch with CUDA (choose based on your CUDA version)
 #   Visit https://pytorch.org/ and select your CUDA version, then run:
 #   
+#   Example for CUDA 12.9:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu129
+#   
 #   Example for CUDA 11.8:
 #   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 #   
@@ -34,7 +37,8 @@ tensorboard>=2.10.0
 tensorboard-data-server>=0.6.0
 
 # Data processing and visualization
-numpy>=1.23.0,<2.0.0
+# Note: NumPy 2.x is already installed with PyTorch, so we allow it
+numpy>=1.23.0
 matplotlib>=3.6.0
 Pillow>=9.2.0
 
