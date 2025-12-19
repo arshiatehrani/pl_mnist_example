@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH --time=0-00:20:00
 #SBATCH --account=def-bakhshai
-#SBATCH --mem=32G            # memory per node
-#SBATCH --gpus-per-node=h100:1
-#SBATCH --cpus-per-task=6      # CPU cores/threads
-#SBATCH --ntasks-per-node=12
+#SBATCH --mem=32G                  # memory per node (32GB)
+#SBATCH --gpus-per-node=h100:1    # 1 H100 GPU
+#SBATCH --cpus-per-task=8         # CPU cores for the single task (adjust based on node availability)
+#SBATCH --ntasks-per-node=1       # Single task (one training script)
 #SBATCH --mail-user=arshia.tehrani1380@gmail.com
 #SBATCH --mail-type=ALL
-# export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 echo "Hello World"
 nvidia-smi
@@ -29,6 +29,7 @@ tensorboard --logdir=${logdir}/lightning_logs --host 0.0.0.0 --load_fast false &
     --dataloader MNIST \
     --batch_size 32 \
     --epoch 10 \
-    --num_workers 10 \
+    --gpus -1 \
+    --num_workers 8 \
     --logdir ${logdir} \
     --data_dir  ${datadir}
