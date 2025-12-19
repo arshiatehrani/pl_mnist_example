@@ -27,7 +27,7 @@ tensorboard --logdir=${logdir}/lightning_logs --host 0.0.0.0 --load_fast false &
     python ~/projects/pl_mnist_example/train.py \
     --model Conv \
     --dataloader MNIST \
-    --batch_size 32 \
+    --batch_size 64 \
     --epoch 30 \
     --gpus -1 \
     --num_workers 6 \
