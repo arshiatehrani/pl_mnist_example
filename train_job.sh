@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --time=0-00:30:00
+#SBATCH --time=0-00:20:00
 #SBATCH --account=def-bakhshai
-#SBATCH --mem=32000M            # memory per node
+#SBATCH --mem=32G            # memory per node
 #SBATCH --gpus-per-node=h100:1
 #SBATCH --cpus-per-task=6      # CPU cores/threads
 #SBATCH --ntasks-per-node=12
