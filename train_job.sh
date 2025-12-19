@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --time=0-00:15:00
+#SBATCH --time=0-00:10:00
 #SBATCH --account=def-bakhshai
 #SBATCH --mem=16000                  # memory per node (32GB)
 #SBATCH --gpus-per-node=h100:1    # 1 H100 GPU
-#SBATCH --cpus-per-task=4         # CPU cores for the single task (adjust based on node availability)
+#SBATCH --cpus-per-task=6         # CPU cores for the single task (adjust based on node availability)
 #SBATCH --ntasks-per-node=1       # Single task (one training script)
 #SBATCH --mail-user=arshia.tehrani1380@gmail.com
 #SBATCH --mail-type=ALL
@@ -28,8 +28,8 @@ tensorboard --logdir=${logdir}/lightning_logs --host 0.0.0.0 --load_fast false &
     --model Conv \
     --dataloader MNIST \
     --batch_size 32 \
-    --epoch 10 \
+    --epoch 30 \
     --gpus -1 \
-    --num_workers 4 \
+    --num_workers 6 \
     --logdir ${logdir} \
     --data_dir  ${datadir}
