@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --time=0-00:20:00
+#SBATCH --time=0-00:15:00
 #SBATCH --account=def-bakhshai
 #SBATCH --mem=16000                  # memory per node (32GB)
 #SBATCH --gpus-per-node=h100:1    # 1 H100 GPU
