@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --time=0-00:20:00
 #SBATCH --account=def-bakhshai
-#SBATCH --mem=32G                  # memory per node (32GB)
+#SBATCH --mem=16000                  # memory per node (32GB)
 #SBATCH --gpus-per-node=h100:1    # 1 H100 GPU
 #SBATCH --cpus-per-task=8         # CPU cores for the single task (adjust based on node availability)
 #SBATCH --ntasks-per-node=1       # Single task (one training script)
