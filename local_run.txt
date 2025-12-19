@@ -1,0 +1,1 @@
+python train.py --model Conv --dataloader MNIST --data_dir ./data --batch_size 64 --epoch 20 --gpus -1 --num_workers 4 --logdir ./logs --lr 0.001
