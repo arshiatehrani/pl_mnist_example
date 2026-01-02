@@ -1,4 +1,5 @@
 """
+Happy 2026!
 Training script for MNIST digit classification using PyTorch Lightning.
 Supports multiple model architectures and provides comprehensive training configuration.
 """
